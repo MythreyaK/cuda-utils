@@ -72,8 +72,8 @@ namespace cuda {
             else {
                 // CPU world, it's understood sync is user's problem, and we are
                 // usually running on a single thread
-                cuda::set_value(&m_size, m_size + 1);
                 cuda::set_value(mem[m_size], item);
+                cuda::set_value(m_size, m_size + 1);
             }
         }
 
