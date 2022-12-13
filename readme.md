@@ -1,6 +1,8 @@
-# CUDA utils
+# CUDA-CPP
 
 Tools under development to improve cuda experience in C++
+
+Tested only on Windows 
 
 ```cpp
 #include "cuda_utils/cuda_utils.cuh"
