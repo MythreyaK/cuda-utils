@@ -19,9 +19,16 @@ __global__ void print_vec(int* ints, size_t size) {
     printf("ints_vec [%d]: %d\n", tid, ints[tid]);
 }
 
-__global__ void print_vec_kernel(int* ints, size_t size) {
-    const uint32_t tid = blockIdx.x * blockDim.x + threadIdx.x;
-    printf(" In kernel DP -> ints_vec [%d]: %d\n", tid, ints[tid]);
+template<typename T1, typename T2>
+__global__ void print_vec_iterator(cuda::vector<T1, T2>& ints) {
+
+    // grid-stride loop iterator equivalent, no more
+    // calculating tid
+    uint32_t tid = blockIdx.x * blockDim.x + threadIdx.x;
+
+    for (const auto& i : cuda::grid_stride_adaptor(ints)) {
+        printf("print_vec_iterator: Thread [%d]: %d\n", tid, i);
+    }
 }
 
 template<typename T1, typename T2>

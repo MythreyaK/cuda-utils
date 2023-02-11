@@ -19,15 +19,19 @@ int main() {
 
         // this is a managed vector by default, so can use [] on host
         // cuda runtime manages page-fault to keep things consistent
-        auto vec { std::make_unique<cuda::vector<int>>() };
-        vec->reserve(1024);
-
+        auto  vec { std::make_unique<cuda::vector<int>>() };
         auto& vec_ref { *vec };
+
+        vec_ref.resize(8);
+
+        for ( int i = 0; i < vec_ref.size(); ++i )
+            vec_ref[i] = i;
 
         vec_ref[3] = -1;
 
         auto t = cuda::time_it([&vec_ref]() {
             print_vec<<<1, 8>>>(vec_ref.mem, vec_ref.size());
+            print_vec_iterator<<<2, 2>>>(vec_ref);
 
             CUDA_CHECK(cudaDeviceSynchronize());
         });
