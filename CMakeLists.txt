@@ -2,7 +2,7 @@
 
 #CMake minimum requirement
 
-set(CMAKE_MIN_VER 3.20)
+set(CMAKE_MIN_VER 3.25)
 cmake_minimum_required(VERSION ${CMAKE_MIN_VER} FATAL_ERROR)
 
 #Project name
@@ -11,8 +11,14 @@ set(project_name "CUDA Utils")
 project(${project_name} LANGUAGES CXX C CUDA)
 
 set(CMAKE_C_STANDARD    17)
-set(CMAKE_CXX_STANDARD  20)
-set(CMAKE_CUDA_STANDARD 17)
+set(CMAKE_CXX_STANDARD  23)
+set(CMAKE_CUDA_STANDARD 20)
+
+if(NOT DEFINED CMAKE_CUDA20_STANDARD_COMPILE_OPTION)
+  set(CMAKE_CUDA20_STANDARD_COMPILE_OPTION "")
+  set(CMAKE_CUDA20_EXTENSION_COMPILE_OPTION "")
+  set(CMAKE_CUDA_FLAGS "-std=c++20")
+endif()
 
 #default build type is Release
 if (CMAKE_BUILD_TYPE STREQUAL "")
@@ -20,7 +26,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "")
 endif ()
 
 # Auto-detect GPU architecture
-include("cmake/AutoDetectCudaArch.cmake")
+set(CUDA_ARCHITECTURES native)
 
 # CUDA and C++ compiler flags
 set(cxx_flags

@@ -1,13 +1,34 @@
 #ifndef CUDA_MISC_UTILS_CUH
 #define CUDA_MISC_UTILS_CUH
 
-#define HOST        __host__
-#define DEVICE      __device__
-#define GLOBAL      __global__
-#define HOST_DEVICE __host__ __device__
+#include "defs.cuh"
 
 #include <cassert>
 #include <iostream>
+// #pragma nv_diag_suppress 20096
+
+namespace cuda {
+    // clang-format off
+
+    // This works because of code-splitting that nvcc does!
+    HOSTDEVICE
+    consteval bool is_device_code() {
+    #if ( !defined(__CUDA_ARCH__) )
+        return false;
+    #elif ( defined(__CUDA_ARCH__) )
+        return true;
+    #else
+        #pragma error("__CUDA_ARCH__ is undefined. Cannot build host/device code")
+    #endif
+    }
+
+    HOSTDEVICE
+    consteval bool is_host_code() {
+        return !cuda::is_device_code();
+    }
+    // clang-format on
+
+}  // namespace cuda
 
 #define CUDA_CHECK(X)                                                          \
     do {                                                                       \
@@ -17,46 +38,11 @@
                    __FILE__,                                                   \
                    __LINE__,                                                   \
                    cudaGetErrorString(ret_code));                              \
-            if constexpr ( cuda::is_host_code() ) {                            \
-                std::flush(std::cout);                                         \
-                std::flush(std::cerr);                                         \
-            }                                                                  \
             assert(ret_code == cudaSuccess);                                   \
         }                                                                      \
     } while ( 0 )
 
 namespace cuda {
-
-    // clang-format off
-
-    // This works because of code-splitting that nvcc does!
-    // default template paramater, just in case, to force the compiler to evaluate this
-    // at compile time. consteval is C++20 feature, cuda does not yet support it
-    template <size_t N = 0>
-    __host__ __device__
-    constexpr bool is_device_code(size_t i = N) {
-#if ( !defined(__CUDA_ARCH__) )
-        return false;
-#elif ( defined(__CUDA_ARCH__) )
-        return true;
-#else
-    #pragma error("__CUDA_ARCH__ is undefined. Cannot build host/device code")
-#endif
-    }
-
-    template <size_t N = 0>
-    __host__ __device__
-    constexpr bool is_host_code(size_t i = N) {
-        return !cuda::is_device_code();
-    }
-    // clang-format on
-
-    __host__ __device__ void where_am_i() {
-        if constexpr ( is_device_code() )
-            printf("Where am I: Device\n");
-        else
-            printf("Where am I: Host\n");
-    }
 
     // read out a T at ptr, and do the right thing to read it
     // if it's on device / host and is being accessed from
@@ -102,12 +88,12 @@ namespace cuda {
 
     // TODO: atomicCAS required?
     template<typename T>
-    void set_value(T* ptr, const T& value) {
+    void set_value(T& ptr, const T& value) {
         using mtype = cudaMemoryType;
 
         cudaPointerAttributes attr;
 
-        CUDA_CHECK(cudaPointerGetAttributes(&attr, ptr));
+        CUDA_CHECK(cudaPointerGetAttributes(&attr, &ptr));
 
         if ( attr.type == mtype::cudaMemoryTypeUnregistered ) {
             assert("Invalid memory type to get_value");
@@ -120,7 +106,7 @@ namespace cuda {
                 assert("Cannot read a host pointer on device\n");
             }
             else {
-                *ptr = value;
+                ptr = value;
             }
         }
         else {
@@ -129,15 +115,16 @@ namespace cuda {
             if ( attr.type == mtype::cudaMemoryTypeDevice ) {
                 // do a copy
                 CUDA_CHECK(
-                  cudaMemcpy(ptr, &value, sizeof(T), cudaMemcpyHostToDevice));
+                  cudaMemcpy(&ptr, &value, sizeof(T), cudaMemcpyHostToDevice));
             }
             else {
                 // else it's managed or on host already, safe to dereference
-                *ptr = value;
+                ptr = value;
             }
         }
     }
 
 }  // namespace cuda
 
+#include "undefs.cuh"
 #endif

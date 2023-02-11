@@ -1,6 +1,7 @@
-#include "cuda_utils/cuda_utils.cuh"
+#include "cuda_cpp/cuda_cpp.cuh"
 #include "kernels.cuh"
 
+#include <concepts>
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -11,7 +12,7 @@ int main() {
           [](float t) { printf("Time taken: %5.2fms\n", t); });
 
         // this prints host or device depending on where it's called from
-        cuda::where_am_i();
+        where_am_i();
         print<<<1, 16>>>();
 
         CUDA_CHECK(cudaDeviceSynchronize());
@@ -26,7 +27,7 @@ int main() {
         vec_ref[3] = -1;
 
         auto t = cuda::time_it([&vec_ref]() {
-            test_vector<<<1, 8>>>(vec_ref);
+            print_vec<<<1, 8>>>(vec_ref.mem, vec_ref.size());
 
             CUDA_CHECK(cudaDeviceSynchronize());
         });

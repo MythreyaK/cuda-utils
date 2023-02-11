@@ -1,10 +1,16 @@
 #ifndef CUDA_MEMORY_ALLOCATOR_CUH
 #define CUDA_MEMORY_ALLOCATOR_CUH
 
+#include "defs.cuh"
 #include "misc.cuh"
 #include "new_delete.cuh"
 
 namespace cuda {
+
+    enum class memory_type : uint8_t {
+        managed,
+        device_local,
+    };
 
     template<typename T, memory_type MT>
     class allocator {
@@ -24,7 +30,7 @@ namespace cuda {
         template<class TX, memory_type MT>
         constexpr allocator(const allocator<TX, MT>&) noexcept {}
 
-        [[nodiscard]] HOST_DEVICE T* allocate(size_t byte_count) {
+        [[nodiscard]] HOSTDEVICE T* allocate(size_t byte_count) {
             T* ret = nullptr;
 
             if constexpr ( MT == memory_type::managed ) {
@@ -48,26 +54,24 @@ namespace cuda {
             return ret;
         }
 
-        HOST_DEVICE
-        void deallocate(T* ptr) noexcept {
+        HOSTDEVICE void deallocate(T* ptr) noexcept {
             CUDA_CHECK(cudaFree(ptr));
         }
 
-        HOST_DEVICE
-        void deallocate(T* ptr, size_t n) noexcept {
+        HOSTDEVICE void deallocate(T* ptr, size_t n) noexcept {
             CUDA_CHECK(cudaFree(ptr));
         }
     };
 
     template<class T, class U, cuda::memory_type MT>
-    HOST_DEVICE bool operator==(const allocator<T, MT>&,
-                                const allocator<U, MT>&) {
+    HOSTDEVICE bool operator==(const allocator<T, MT>&,
+                               const allocator<U, MT>&) {
         return true;
     }
 
     template<class T, class U, cuda::memory_type MT>
-    HOST_DEVICE bool operator!=(const allocator<T, MT>&,
-                                const allocator<U, MT>&) {
+    HOSTDEVICE bool operator!=(const allocator<T, MT>&,
+                               const allocator<U, MT>&) {
         return false;
     }
 
@@ -79,4 +83,5 @@ namespace cuda {
 
 }  // namespace cuda
 
+#include "undefs.cuh"
 #endif

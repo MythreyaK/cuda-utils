@@ -1,6 +1,8 @@
 #ifndef CUDA_TIMER_HPP
 #define CUDA_TIMER_HPP
 
+#include "defs.cuh"
+
 namespace cuda {
 
     template<typename T>
@@ -47,4 +49,5 @@ namespace cuda {
     };
 }  // namespace cuda
 
+#include "undefs.cuh"
 #endif

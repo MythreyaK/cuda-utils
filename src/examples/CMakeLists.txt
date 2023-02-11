@@ -10,6 +10,11 @@ file(GLOB_RECURSE CPP_FILES *.cu)
 #Executable
 add_executable(${exec_name} ${HPP_FILES} ${CUH_FILES} ${CPP_FILES})
 
-target_link_libraries(${exec_name} PUBLIC "cuda_utils")
+target_link_libraries(${exec_name} PUBLIC "cuda_cpp")
 
-set_target_properties(main PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+set_target_properties(main PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES         native
+)
+
+target_link_libraries(${exec_name} PUBLIC developer_flags)
