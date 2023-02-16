@@ -3,7 +3,6 @@
 #define CUDA_DEVICE_VECTOR_CUH
 
 #include "allocator.cuh"
-#include "defs.cuh"
 #include "iterator.cuh"
 #include "misc.cuh"
 #include "utility.cuh"
@@ -11,6 +10,8 @@
 #include <iostream>
 #include <iterator>
 #include <vector>
+
+#include "defs.cuh"
 
 namespace cuda {
 

@@ -2,10 +2,11 @@
 #define CUDA_CPP_UTILITY_CUH
 
 #include "concepts.cuh"
-#include "defs.cuh"
 
 #include <concepts>
 #include <type_traits>
+
+#include "defs.cuh"
 
 namespace {
 

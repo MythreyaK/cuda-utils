@@ -1,9 +1,10 @@
 #ifndef CUDA_MEMORY_ALLOCATOR_CUH
 #define CUDA_MEMORY_ALLOCATOR_CUH
 
-#include "defs.cuh"
 #include "misc.cuh"
 #include "new_delete.cuh"
+
+#include "defs.cuh"
 
 namespace cuda {
 

@@ -2,11 +2,11 @@
 #ifndef CUDA_ITERATOR_CUH
 #define CUDA_ITERATOR_CUH
 
-#include "defs.cuh"
-
 #include <concepts>
 #include <iterator>
 #include <type_traits>
+
+#include "defs.cuh"
 // #pragma nv_diag_suppress 2361
 
 namespace cuda {
@@ -133,13 +133,64 @@ namespace cuda {
     struct grid_stride_iterator {
         T m_pos {};
 
+        // using value_type        = std::decay_t<typename T::value_type>;
+        // using const_value_type  = const T;
+        // using difference_type   = std::ptrdiff_t;
+        // using iterator_category = std::contiguous_iterator_tag;
+        // using pointer           = value_type*;
+        // using reference         = value_type&;
+        // using const_pointer     = const value_type*;
+        // using const_reference   = const value_type&;
+
+        // using iterator = T::iterator;
+        // // using reverse_iterator       = std::reverse_iterator<iterator>;
+        // using const_iterator = const contiguous_iterator<const_value_type>;
+
+        // this looks counter intuitive, but remember that each thread calls
+        // begin, so each thread gets its own. Map it out to how one would
+        // typically write out a grid-stride loop
+
         grid_stride_iterator() = default;
 
         DEVICE grid_stride_iterator(T pos)
           : m_pos { pos + threadIdx.x + blockIdx.x * gridDim.x } {
-            printf("Iterator constructed in thread: %2d\n",
-                   threadIdx.x + blockIdx.x * gridDim.x);
+            // printf("Iterator constructed in thread: %2d\n",
+            //        threadIdx.x + blockIdx.x * gridDim.x);
         }
+
+        // DEVICE grid_stride_iterator(iterator begin, iterator end)
+        //   : m_thisthread { threadIdx.x + blockIdx.x * gridDim.x }
+        //   , m_stride { gridDim.x * blockDim.x }
+        //   , m_begin { begin + m_thisthread }
+        //   , m_end { end }
+        //   , m_current { begin } {}
+
+        // DEVICE grid_stride_iterator(const T& obj)
+        //   : m_thisthread { threadIdx.x + blockIdx.x * gridDim.x }
+        //   , m_stride { gridDim.x * blockDim.x }
+        //   , m_begin { obj.cbegin() + m_thisthread }
+        //   , m_end { obj.cend() }
+        //   , m_current { obj.cbegin() } {}
+
+        // DEVICE grid_stride_iterator(const_iterator begin, const_iterator
+        // end)
+        //   : m_thisthread { threadIdx.x + blockIdx.x * gridDim.x }
+        //   , m_stride { gridDim.x * blockDim.x }
+        //   , m_begin { begin + m_thisthread }
+        //   , m_end { end }
+        //   , m_current { begin } {}
+
+        // WARNING: invalid narrowing conversion from "unsigned int" to
+        // "int" but should be fine, right? We can't have more than 2^23-1
+        // threads anyway (in m_start + m_thisthread)
+
+        // these operator are "called" by the ranged-for-loop
+
+        // constexpr iterator& operator++() {
+        //     m_current += m_stride;
+        //     if (m_current > m_end) m_current = m_end;
+        //     return *this;
+        // }
 
         DEVICE constexpr grid_stride_iterator& operator++() {
             m_pos += blockDim.x * gridDim.x;
@@ -150,13 +201,18 @@ namespace cuda {
             return *m_pos;
         }
 
+        // constexpr grid_stride_iterator& operator++(int) {
+        //     m_pos += blockDim.x * gridDim.x;
+        //     return *this;
+        // }
+
         constexpr std::strong_ordering
         operator<=>(const grid_stride_iterator& o) const = default;
     };
 
-    // TODO: Testing things, flesh this out completely later
-    // currently supports only 1D mapping
-    // Also, ranges librrary support?
+    // // TODO: stopgap to test things, flesh this out completely later
+    // // currently supports only 1D mapping
+    // // Also, ranges librrary support?
 
     template<typename T>
     // requires std::contiguous_iterator<T>

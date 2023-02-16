@@ -1,10 +1,6 @@
-#ifndef CUDA_CPP_UNDEFS_CUH
-#define CUDA_CPP_UNDEFS_CUH
-
-#ifdef CUDA_CPP_DEFINES
+#ifdef CUDA_CPP_DEFS_CUH
+#    undef CUDA_CPP_DEFS_CUH
 #    undef HOST
 #    undef DEVICE
 #    undef HOSTDEVICE
-#endif
-
 #endif

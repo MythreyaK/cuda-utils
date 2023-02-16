@@ -2,8 +2,9 @@
 #define CUDA_NEW_DELETE_CUH
 
 #include "allocator.cuh"
-#include "defs.cuh"
 #include "misc.cuh"
+
+#include "defs.cuh"
 
 namespace cuda {
 

@@ -7,7 +7,7 @@
 
 #include <cassert>
 
-HOSTDEVICE void where_am_i() {
+__host__ __device__ void where_am_i() {
     if constexpr ( cuda::is_device_code() )
         printf("Where am I: Device\n");
     else
@@ -26,7 +26,7 @@ __global__ void print_vec_iterator(cuda::vector<T1, T2>& ints) {
     // calculating tid
     uint32_t tid = blockIdx.x * blockDim.x + threadIdx.x;
 
-    for (const auto& i : cuda::grid_stride_adaptor(ints)) {
+    for ( const auto& i : cuda::grid_stride_adaptor(ints) ) {
         printf("print_vec_iterator: Thread [%d]: %d\n", tid, i);
     }
 }

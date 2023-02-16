@@ -67,6 +67,9 @@ FixNamespaceComments: true
 # ForEachMacros
 IncludeBlocks: Regroup
 IncludeCategories:
+  - Regex:           '^"(defs\.cuh)'
+    Priority:        4
+    SortPriority:    0
   - Regex:           '^"(llvm|llvm-c|clang|clang-c)/'
     Priority:        2
     SortPriority:    0

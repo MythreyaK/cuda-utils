@@ -1,10 +1,10 @@
 #ifndef CUDA_MISC_UTILS_CUH
 #define CUDA_MISC_UTILS_CUH
 
-#include "defs.cuh"
-
 #include <cassert>
 #include <iostream>
+
+#include "defs.cuh"
 // #pragma nv_diag_suppress 20096
 
 namespace cuda {
