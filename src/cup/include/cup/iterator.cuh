@@ -1,6 +1,4 @@
-
-#ifndef CUDA_ITERATOR_CUH
-#define CUDA_ITERATOR_CUH
+#pragma once
 
 #include <concepts>
 #include <iterator>
@@ -9,7 +7,7 @@
 #include "defs.cuh"
 // #pragma nv_diag_suppress 2361
 
-namespace cuda {
+namespace cup {
 
     template<typename T>
     struct contiguous_iterator {
@@ -259,7 +257,6 @@ namespace cuda {
         }
     };
 
-}  // namespace cuda
+}  // namespace cup
 
 #include "undefs.cuh"
-#endif

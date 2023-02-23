@@ -1,4 +1,4 @@
-#include "cuda_cpp/cuda_cpp.cuh"
+#include "cup/cup.cuh"
 #include "kernels.cuh"
 
 #include <concepts>
@@ -8,7 +8,7 @@
 
 int main() {
     {
-        cuda::scoped_timer timer(
+        cup::scoped_timer timer(
           [](float t) { printf("Time taken: %5.2fms\n", t); });
 
         // this prints host or device depending on where it's called from
@@ -19,7 +19,7 @@ int main() {
 
         // this is a managed vector by default, so can use [] on host
         // cuda runtime manages page-fault to keep things consistent
-        auto  vec { std::make_unique<cuda::vector<int>>() };
+        auto  vec { std::make_unique<cup::vector<int>>() };
         auto& vec_ref { *vec };
 
         vec_ref.resize(8);
@@ -29,7 +29,7 @@ int main() {
 
         vec_ref[3] = -1;
 
-        auto t = cuda::time_it([&vec_ref]() {
+        auto t = cup::time_it([&vec_ref]() {
             print_vec<<<1, 8>>>(vec_ref.mem, vec_ref.size());
             print_vec_iterator<<<2, 2>>>(vec_ref);
 
@@ -45,7 +45,7 @@ int main() {
 
     {
         auto vec {
-            std::make_unique<cuda::vector<int, cuda::device_allocator<int>>>()
+            std::make_unique<cup::vector<int, cup::device_allocator<int>>>()
         };
         vec->reserve(1024);
 
@@ -64,7 +64,7 @@ int main() {
 
     {
 
-        auto vec = std::vector<int, cuda::managed_allocator<int>>();
+        auto vec = std::vector<int, cup::managed_allocator<int>>();
         vec.reserve(8);
 
         vec.push_back(0);

@@ -1,9 +1,8 @@
-#ifndef CUDA_TIMER_HPP
-#define CUDA_TIMER_HPP
+#pragma once
 
 #include "defs.cuh"
 
-namespace cuda {
+namespace cup {
 
     template<typename T>
     struct scoped_timer {
@@ -47,7 +46,6 @@ namespace cuda {
         cudaEventElapsedTime(&time_taken, start, stop);
         return time_taken;
     };
-}  // namespace cuda
+}  // namespace cup
 
 #include "undefs.cuh"
-#endif

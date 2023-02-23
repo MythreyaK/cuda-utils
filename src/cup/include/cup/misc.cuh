@@ -1,5 +1,4 @@
-#ifndef CUDA_MISC_UTILS_CUH
-#define CUDA_MISC_UTILS_CUH
+#pragma once
 
 #include <cassert>
 #include <iostream>
@@ -7,7 +6,7 @@
 #include "defs.cuh"
 // #pragma nv_diag_suppress 20096
 
-namespace cuda {
+namespace cup {
     // clang-format off
 
     // This works because of code-splitting that nvcc does!
@@ -24,11 +23,11 @@ namespace cuda {
 
     HOSTDEVICE
     consteval bool is_host_code() {
-        return !cuda::is_device_code();
+        return !cup::is_device_code();
     }
     // clang-format on
 
-}  // namespace cuda
+}  // namespace cup
 
 #define CUDA_CHECK(X)                                                          \
     do {                                                                       \
@@ -42,7 +41,7 @@ namespace cuda {
         }                                                                      \
     } while ( 0 )
 
-namespace cuda {
+namespace cup {
 
     // read out a T at ptr, and do the right thing to read it
     // if it's on device / host and is being accessed from
@@ -124,7 +123,6 @@ namespace cuda {
         }
     }
 
-}  // namespace cuda
+}  // namespace cup
 
 #include "undefs.cuh"
-#endif

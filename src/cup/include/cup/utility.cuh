@@ -1,5 +1,4 @@
-#ifndef CUDA_CPP_UTILITY_CUH
-#define CUDA_CPP_UTILITY_CUH
+#pragma once
 
 #include "concepts.cuh"
 
@@ -17,7 +16,7 @@ namespace {
                      || std::movable<std::remove_reference_t<T>>;
 }  // namespace
 
-namespace cuda {
+namespace cup {
 
     template<typename T>
     requires warp_syncable<T>
@@ -43,7 +42,7 @@ namespace cuda {
         }
 
         DEVICE void sync(uint32_t mask = __activemask()) {
-            if constexpr ( cuda::native_warp_syncable<T> ) {
+            if constexpr ( cup::native_warp_syncable<T> ) {
                 // native type accepted by __shfl_sync
                 wrapped = __shfl_sync(mask, wrapped, owning_thread);
             }
@@ -101,7 +100,6 @@ namespace cuda {
         CUDA_CHECK(cudaPointerGetAttributes(&attr, &item));
         return attr;
     }
-}  // namespace cuda
+}  // namespace cup
 
 #include "undefs.cuh"
-#endif

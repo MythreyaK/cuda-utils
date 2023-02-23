@@ -1,5 +1,5 @@
-#ifdef CUDA_CPP_DEFS_CUH
-#    undef CUDA_CPP_DEFS_CUH
+#ifdef CUP_CPP_DEFS_CUH
+#    undef CUP_CPP_DEFS_CUH
 #    undef HOST
 #    undef DEVICE
 #    undef HOSTDEVICE

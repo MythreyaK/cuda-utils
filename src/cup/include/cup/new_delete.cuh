@@ -1,12 +1,11 @@
-#ifndef CUDA_NEW_DELETE_CUH
-#define CUDA_NEW_DELETE_CUH
+#pragma once
 
 #include "allocator.cuh"
 #include "misc.cuh"
 
 #include "defs.cuh"
 
-namespace cuda {
+namespace cup {
 
     // other overloads as needed
     // https://en.cppreference.com/w/cpp/memory/new/operator_new
@@ -43,7 +42,6 @@ namespace cuda {
         // other overloads as needed
         // https://en.cppreference.com/w/cpp/memory/new/operator_new
     };
-}  // namespace cuda
+}  // namespace cup
 
 #include "undefs.cuh"
-#endif

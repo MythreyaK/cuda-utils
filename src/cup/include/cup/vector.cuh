@@ -1,6 +1,4 @@
-
-#ifndef CUDA_DEVICE_VECTOR_CUH
-#define CUDA_DEVICE_VECTOR_CUH
+#pragma once
 
 #include "allocator.cuh"
 #include "iterator.cuh"
@@ -13,7 +11,7 @@
 
 #include "defs.cuh"
 
-namespace cuda {
+namespace cup {
 
     template<typename T,
              typename _alloc        = managed_allocator<T>,
@@ -21,7 +19,7 @@ namespace cuda {
     class vector
       : public new_delete<
           vector<T, _alloc, _heap_type>,
-          cuda::allocator<vector<T, _alloc, _heap_type>, _heap_type>> {
+          cup::allocator<vector<T, _alloc, _heap_type>, _heap_type>> {
 
         // TODO: Support the case where the data-members are only GPU side
       public:
@@ -46,10 +44,10 @@ namespace cuda {
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
         // this is where this container itself lives (m_size ..)
-        static constexpr cuda::memory_type outer_mem = _heap_type;
+        static constexpr cup::memory_type outer_mem = _heap_type;
 
         // this where data that T* points to lives
-        static constexpr cuda::memory_type inner_mem = allocator_t::memory_t;
+        static constexpr cup::memory_type inner_mem = allocator_t::memory_t;
 
         // ctors
         vector() = default;
@@ -108,14 +106,14 @@ namespace cuda {
                                   vec.size() * sizeof(T),
                                   cudaMemcpyHostToDevice));
             // set size to capacity, indicating buffer is full
-            cuda::set_value(m_size, m_capacity);
+            cup::set_value(m_size, m_capacity);
         }
 
         // assignment from std::vector
         void operator=(const std::vector<T>& vec) {
             // check to make sure there is no data already
             if ( mem != nullptr ) {
-                std::cerr << "Warning: Assigning to cuda::vector that already "
+                std::cerr << "Warning: Assigning to cup::vector that already "
                              "has data\n";
             }
 
@@ -130,12 +128,12 @@ namespace cuda {
 
         HOSTDEVICE size_t size() const {
 
-            if constexpr ( cuda::is_device_code() ) {
+            if constexpr ( cup::is_device_code() ) {
                 return m_size;
             }
             else {
                 // host call
-                return cuda::get_value(m_size);
+                return cup::get_value(m_size);
             }
         }
 
@@ -149,13 +147,13 @@ namespace cuda {
             allocator_t alloc {};
             mem = alloc.allocate(sizeof(T) * items);
 
-            if constexpr ( cuda::is_device_code() ) {
+            if constexpr ( cup::is_device_code() ) {
                 m_size     = 0;
                 m_capacity = items;
             }
             else {
-                cuda::set_value(m_size, 0ull);
-                cuda::set_value(m_capacity, items);
+                cup::set_value(m_size, 0ull);
+                cup::set_value(m_capacity, items);
             }
         }
 
@@ -167,7 +165,7 @@ namespace cuda {
             // we don't need r-value and other overloads, it's copy to GPU mem
             // anyway. With managed/unified memory, there are potential
             // optimizations, but we'll deal with that later
-            if constexpr ( cuda::is_device_code() ) {
+            if constexpr ( cup::is_device_code() ) {
                 // parallel/concurrent access by default, we need to do sync so
                 // fail for now
                 // static_assert(!sizeof(T*),
@@ -176,24 +174,24 @@ namespace cuda {
             else {
                 // CPU world, it's understood sync is user's problem, and we are
                 // usually running on a single thread
-                cuda::set_value(mem[m_size], item);
-                cuda::set_value(m_size, m_size + 1);
+                cup::set_value(mem[m_size], item);
+                cup::set_value(m_size, m_size + 1);
             }
         }
 
         HOSTDEVICE size_t capacity() const {
-            if constexpr ( cuda::is_device_code() ) {
+            if constexpr ( cup::is_device_code() ) {
                 return m_capacity;
             }
             else {
                 // host call
-                return cuda::get_value(m_capacity);
+                return cup::get_value(m_capacity);
             }
         }
 
         HOSTDEVICE T& operator[](size_t inx) {
             // if T* is only on device, using [] on host is not valid
-            if constexpr ( cuda::is_host_code()
+            if constexpr ( cup::is_host_code()
                            && inner_mem == memory_type::device_local )
             {
                 static_assert(!sizeof(T*),
@@ -208,7 +206,7 @@ namespace cuda {
 
         HOSTDEVICE const T& operator[](size_t inx) const {
             // if T* is only on device, using [] on host is not valid
-            if constexpr ( cuda::is_host_code()
+            if constexpr ( cup::is_host_code()
                            && inner_mem == memory_type::device_local )
             {
                 static_assert(!sizeof(T*),
@@ -230,7 +228,7 @@ namespace cuda {
         }
 
         HOSTDEVICE vector& swap(vector& rhs) {
-            using cuda::swap;
+            using cup::swap;
             swap(mem, rhs.mem);
             swap(m_size, rhs.m_size);
             swap(m_capacity, rhs.m_capacity);
@@ -281,14 +279,13 @@ namespace cuda {
     // this vector's data lives ONLY on the device. Ideal for in-kernel allocations
     template<typename T>
     using device_vector =
-      cuda::vector<T, cuda::device_allocator<T>, memory_type::device_local>;
+      cup::vector<T, cup::device_allocator<T>, memory_type::device_local>;
 
     // this vector's data is on managed heap, and can be accessed on device too
     template<typename T>
     using host_vector =
-      cuda::vector<T, cuda::device_allocator<T>, memory_type::managed>;
+      cup::vector<T, cup::device_allocator<T>, memory_type::managed>;
 
-}  // namespace cuda
+}  // namespace cup
 
 #include "undefs.cuh"
-#endif

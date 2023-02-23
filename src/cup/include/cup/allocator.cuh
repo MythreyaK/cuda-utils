@@ -1,12 +1,11 @@
-#ifndef CUDA_MEMORY_ALLOCATOR_CUH
-#define CUDA_MEMORY_ALLOCATOR_CUH
+#pragma once
 
 #include "misc.cuh"
 #include "new_delete.cuh"
 
 #include "defs.cuh"
 
-namespace cuda {
+namespace cup {
 
     enum class memory_type : uint8_t {
         managed,
@@ -36,10 +35,10 @@ namespace cuda {
 
             if constexpr ( MT == memory_type::managed ) {
 
-                if constexpr ( cuda::is_host_code() ) {
+                if constexpr ( cup::is_host_code() ) {
                     CUDA_CHECK(cudaMallocManaged(&ret, byte_count));
                 }
-                else if constexpr ( cuda::is_device_code() ) {
+                else if constexpr ( cup::is_device_code() ) {
                     // unfortunately this can't be a compile time error (yet?
                     // hopefully!) due to how code-gen works :(
                     assert("Cannot call mallocManaged in device code");
@@ -64,13 +63,13 @@ namespace cuda {
         }
     };
 
-    template<class T, class U, cuda::memory_type MT>
+    template<class T, class U, cup::memory_type MT>
     HOSTDEVICE bool operator==(const allocator<T, MT>&,
                                const allocator<U, MT>&) {
         return true;
     }
 
-    template<class T, class U, cuda::memory_type MT>
+    template<class T, class U, cup::memory_type MT>
     HOSTDEVICE bool operator!=(const allocator<T, MT>&,
                                const allocator<U, MT>&) {
         return false;
@@ -82,7 +81,6 @@ namespace cuda {
     template<typename T>
     using device_allocator = allocator<T, memory_type::device_local>;
 
-}  // namespace cuda
+}  // namespace cup
 
 #include "undefs.cuh"
-#endif

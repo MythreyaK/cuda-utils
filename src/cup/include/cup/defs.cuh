@@ -1,5 +1,5 @@
-#ifndef CUDA_CPP_DEFS_CUH
-#define CUDA_CPP_DEFS_CUH
+#ifndef CUP_CPP_DEFS_CUH
+#define CUP_CPP_DEFS_CUH
 
 #define HOSTDEVICE __host__ __device__
 #define HOST       __host__

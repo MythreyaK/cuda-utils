@@ -1,5 +1,4 @@
-#ifndef CUDA_CPP_CONCEPTS_CUH
-#define CUDA_CPP_CONCEPTS_CUH
+#pragma once
 
 namespace {
     template<typename T, typename... AllowedTs>
@@ -7,7 +6,7 @@ namespace {
 
 }
 
-namespace cuda {
+namespace cup {
 
     // T has to be one of the other types
     // taken from cuda docs
@@ -30,6 +29,4 @@ namespace cuda {
     };
 
     // clang-format on
-}  // namespace cuda
-
-#endif
+}  // namespace cup

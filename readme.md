@@ -5,21 +5,21 @@ Tools under development to improve cuda experience in C++
 Tested only on Windows 
 
 ```cpp
-#include "cuda_utils/cuda_utils.cuh"
+#include "cup/cup.cuh"
 
 #include <iostream>
 #include <vector>
 
 template<typename T1, typename T2>
-__global__ void kernel(cuda::vector<T1, T2>& ints) {
+__global__ void kernel(cup::vector<T1, T2>& ints) {
 
     int thread_id = threadIdx.x + blockDim.x * blockIdx.x;
 
     if ( thread_id == 0 ) {
-        cuda::where_am_i();  // prints "Where am I: Device"
+        cup::where_am_i();  // prints "Where am I: Device"
 
         // per-thread dynamic allocation on device
-        cuda::device_vector<int> vec {};
+        cup::device_vector<int> vec {};
         vec.reserve(blockDim.x);
         vec[2]  = 430;
         ints[2] = vec[2];
@@ -37,20 +37,20 @@ __global__ void kernel(cuda::vector<T1, T2>& ints) {
 }
 
 int main() {
-    cuda::where_am_i();  // prints "Where am I: Host"
+    cup::where_am_i();  // prints "Where am I: Host"
 
     // just works! ints are allocated using cudaMallocManaged
-    auto std_vec = std::vector<int, cuda::managed_allocator<int>>();
+    auto std_vec = std::vector<int, cup::managed_allocator<int>>();
     std_vec.reserve(8);
 
-    auto  vec { std::make_unique<cuda::vector<int>>() };
+    auto  vec { std::make_unique<cup::vector<int>>() };
     auto& vec_ref { *vec };
 
     vec_ref.reserve(4);
 
     vec_ref[1] = -1;
 
-    auto t = cuda::time_it([&vec_ref]() {
+    auto t = cup::time_it([&vec_ref]() {
         // pass the whole datastructure by reference, just works!
         kernel<<<1, 4>>>(vec_ref);
 

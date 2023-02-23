@@ -1,14 +1,14 @@
 #ifndef EXMPL_CUH
 #define EXMPL_CUH
 
-#include "cuda_cpp/concepts.cuh"
-#include "cuda_cpp/cuda_cpp.cuh"
-#include "cuda_cpp/utility.cuh"
+#include "cup/concepts.cuh"
+#include "cup/cup.cuh"
+#include "cup/utility.cuh"
 
 #include <cassert>
 
 __host__ __device__ void where_am_i() {
-    if constexpr ( cuda::is_device_code() )
+    if constexpr ( cup::is_device_code() )
         printf("Where am I: Device\n");
     else
         printf("Where am I: Host\n");
@@ -20,25 +20,25 @@ __global__ void print_vec(int* ints, size_t size) {
 }
 
 template<typename T1, typename T2>
-__global__ void print_vec_iterator(cuda::vector<T1, T2>& ints) {
+__global__ void print_vec_iterator(cup::vector<T1, T2>& ints) {
 
     // grid-stride loop iterator equivalent, no more
     // calculating tid
     uint32_t tid = blockIdx.x * blockDim.x + threadIdx.x;
 
-    for ( const auto& i : cuda::grid_stride_adaptor(ints) ) {
+    for ( const auto& i : cup::grid_stride_adaptor(ints) ) {
         printf("print_vec_iterator: Thread [%d]: %d\n", tid, i);
     }
 }
 
 template<typename T1, typename T2>
-__global__ void test_vector(cuda::vector<T1, T2>& ints) {
+__global__ void test_vector(cup::vector<T1, T2>& ints) {
     const uint32_t tid = blockIdx.x * blockDim.x + threadIdx.x;
 
     if ( tid == 5 ) ints[tid] = 50;
     // create a device_vector, this is thread local!
     // any modifying operations are on thread 0
-    cuda::warp_wide<cuda::device_vector<int>> d_wvec { 0 };
+    cup::warp_wide<cup::device_vector<int>> d_wvec { 0 };
 
     printf("item [%d]: %d\n", tid, d_wvec->size());
 

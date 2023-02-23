@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.19 FATAL_ERROR)
+add_subdirectory("cup")
 
-add_subdirectory("examples")
-add_subdirectory("cuda_cpp")
+if (CUP_BUILD_EXAMPES)
+    add_subdirectory("examples")
+endif()
