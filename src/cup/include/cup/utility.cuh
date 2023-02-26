@@ -87,7 +87,7 @@ namespace cup {
         }
     };
 
-    HOSTDEVICE void swap(swappable auto o1, swappable auto o2) noexcept {
+    HOSTDEVICE void swap(swappable auto& o1, swappable auto& o2) noexcept {
         // static_assert();
         auto tmp { std::move(o1) };
         o1 = std::move(o2);
