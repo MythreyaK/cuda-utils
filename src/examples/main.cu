@@ -9,7 +9,7 @@
 int main() {
     {
         cup::scoped_timer timer(
-          [](float t) { printf("Time taken: %5.2fms\n", t); });
+          [](auto t) { printf("Time taken: %5.2fms\n", t.count()); });
 
         // this prints host or device depending on where it's called from
         where_am_i();
@@ -36,7 +36,7 @@ int main() {
             CUDA_CHECK(cudaDeviceSynchronize());
         });
 
-        printf("Kernel took: %7.3fms\n", t);
+        printf("Kernel took: %7.3fms\n", t.count());
 
         // vec cleaned up here
     }

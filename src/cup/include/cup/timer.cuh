@@ -1,5 +1,7 @@
 #pragma once
 
+#include <chrono>
+
 #include "defs.cuh"
 
 namespace cup {
@@ -21,16 +23,17 @@ namespace cup {
 
         ~scoped_timer() {
             // call the callback
+            using milli_t = std::chrono::duration<float, std::milli>;
             cudaEventRecord(stop);
             cudaEventSynchronize(stop);
             cudaEventElapsedTime(&time_taken, start, stop);
-            m_callback(time_taken);
+            m_callback(milli_t { time_taken });
             // out_time = 1000;
         }
     };
 
     template<typename T>
-    float time_it(const T& callback) {
+    auto time_it(const T& callback) {
         cudaEvent_t start, stop;
         float       time_taken {};
 
@@ -44,7 +47,7 @@ namespace cup {
         cudaEventRecord(stop);
         cudaEventSynchronize(stop);
         cudaEventElapsedTime(&time_taken, start, stop);
-        return time_taken;
+        return std::chrono::duration<float, std::milli> { time_taken };
     };
 }  // namespace cup
 
