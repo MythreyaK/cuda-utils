@@ -10,26 +10,26 @@
 namespace cup {
 
     template<typename T>
-    struct contiguous_iterator {
+    struct vec_contig_iterator {
 
         using value_type        = std::decay_t<T>;
         using difference_type   = std::ptrdiff_t;
         using iterator_category = std::contiguous_iterator_tag;
-        using pointer           = value_type*;
+        using pointer           = value_type* __restrict__;
         using reference         = value_type&;
-        using const_pointer     = const value_type*;
+        using const_pointer     = const value_type* __restrict__;
         using const_reference   = const value_type&;
 
         // clang-format off
-        contiguous_iterator() = default;
-        HOSTDEVICE contiguous_iterator(pointer m) : m_ptr { m } {}
+        vec_contig_iterator() = default;
+        HOSTDEVICE vec_contig_iterator(pointer m) : m_ptr { m } {}
         // clang-format on
 
-        contiguous_iterator(const contiguous_iterator&)            = default;
-        contiguous_iterator& operator=(const contiguous_iterator&) = default;
+        vec_contig_iterator(const vec_contig_iterator&)            = default;
+        vec_contig_iterator& operator=(const vec_contig_iterator&) = default;
 
-        contiguous_iterator(contiguous_iterator&&)            = default;
-        contiguous_iterator& operator=(contiguous_iterator&&) = default;
+        vec_contig_iterator(vec_contig_iterator&&)            = default;
+        vec_contig_iterator& operator=(vec_contig_iterator&&) = default;
 
         constexpr reference operator*() {
             return *m_ptr;
@@ -57,48 +57,48 @@ namespace cup {
 
         // ADD
 
-        constexpr contiguous_iterator& operator++() {
+        constexpr vec_contig_iterator& operator++() {
             m_ptr++;
             return *this;
         }
 
-        constexpr contiguous_iterator operator+(const difference_type& d) const {
+        constexpr vec_contig_iterator operator+(const difference_type& d) const {
             return m_ptr + d;
         }
 
-        constexpr contiguous_iterator operator++(int) {
-            contiguous_iterator tmp = *this;
+        constexpr vec_contig_iterator operator++(int) {
+            vec_contig_iterator tmp = *this;
             ++(*this);
             return tmp;
         }
 
-        constexpr contiguous_iterator& operator+=(size_t skip) {
+        constexpr vec_contig_iterator& operator+=(size_t skip) {
             m_ptr += skip;
             return *this;
         }
 
         // SUB
 
-        constexpr contiguous_iterator& operator--() {
+        constexpr vec_contig_iterator& operator--() {
             m_ptr--;
             return *this;
         }
 
-        constexpr difference_type operator-(const contiguous_iterator& d) const {
+        constexpr difference_type operator-(const vec_contig_iterator& d) const {
             return m_ptr - d.m_ptr;
         }
 
-        constexpr contiguous_iterator operator-(const difference_type& d) const {
+        constexpr vec_contig_iterator operator-(const difference_type& d) const {
             return m_ptr - d;
         }
 
-        constexpr contiguous_iterator operator--(int) {
-            contiguous_iterator tmp = *this;
+        constexpr vec_contig_iterator operator--(int) {
+            vec_contig_iterator tmp = *this;
             --(*this);
             return tmp;
         }
 
-        constexpr contiguous_iterator& operator-=(size_t skip) {
+        constexpr vec_contig_iterator& operator-=(size_t skip) {
             m_ptr -= skip;
             return *this;
         }
@@ -106,43 +106,43 @@ namespace cup {
         // Others
 
         std::strong_ordering
-        operator<=>(const contiguous_iterator& o) const = default;
+        operator<=>(const vec_contig_iterator& o) const = default;
 
-        friend constexpr bool operator==(const contiguous_iterator& a,
-                                         const contiguous_iterator& b) {
+        friend constexpr bool operator==(const vec_contig_iterator& a,
+                                         const vec_contig_iterator& b) {
             return a.m_ptr == b.m_ptr;
         };
 
-        friend constexpr bool operator!=(const contiguous_iterator& a,
-                                         const contiguous_iterator& b) {
+        friend constexpr bool operator!=(const vec_contig_iterator& a,
+                                         const vec_contig_iterator& b) {
             return a.m_ptr != b.m_ptr;
         };
 
-        friend constexpr contiguous_iterator
-        operator+(const difference_type& a, const contiguous_iterator& b) {
+        friend constexpr vec_contig_iterator
+        operator+(const difference_type& a, const vec_contig_iterator& b) {
             return a + b.m_ptr;
         };
 
-        //   private:
+      private:
         pointer m_ptr {};
     };
 
     template<typename T>
     struct grid_stride_iterator {
-        T m_pos {};
 
+        using value_type        = std::decay_t<T>;
         // using value_type        = std::decay_t<typename T::value_type>;
-        // using const_value_type  = const T;
-        // using difference_type   = std::ptrdiff_t;
-        // using iterator_category = std::contiguous_iterator_tag;
-        // using pointer           = value_type*;
-        // using reference         = value_type&;
-        // using const_pointer     = const value_type*;
-        // using const_reference   = const value_type&;
+        using const_value_type  = const T;
+        using difference_type   = std::ptrdiff_t;
+        using iterator_category = std::contiguous_iterator_tag;
+        using pointer           = value_type* __restrict__;
+        using reference         = value_type&;
+        using const_pointer     = const value_type* __restrict__;
+        using const_reference   = const value_type&;
 
         // using iterator = T::iterator;
         // // using reverse_iterator       = std::reverse_iterator<iterator>;
-        // using const_iterator = const contiguous_iterator<const_value_type>;
+        // using const_iterator = const vec_contig_iterator<const_value_type>;
 
         // this looks counter intuitive, but remember that each thread calls
         // begin, so each thread gets its own. Map it out to how one would
@@ -151,7 +151,8 @@ namespace cup {
         grid_stride_iterator() = default;
 
         DEVICE grid_stride_iterator(T pos)
-          : m_pos { pos + threadIdx.x + blockIdx.x * gridDim.x } {
+        //   : m_pos { std::to_address(pos) + threadIdx.x + (blockIdx.x * blockDim.x) } {
+          : m_pos { std::to_address(pos) + threadIdx.x + (blockIdx.x * blockDim.x) } {
             // printf("Iterator constructed in thread: %2d\n",
             //        threadIdx.x + blockIdx.x * gridDim.x);
         }
@@ -190,22 +191,32 @@ namespace cup {
         //     return *this;
         // }
 
-        DEVICE constexpr grid_stride_iterator& operator++() {
+        FORCEINLINE DEVICE
+        constexpr grid_stride_iterator& operator++() {
             m_pos += blockDim.x * gridDim.x;
             return *this;
         }
 
-        DEVICE constexpr auto& operator*() {
+        FORCEINLINE DEVICE
+        constexpr auto operator&() {
+            return m_pos;
+        }
+
+        FORCEINLINE DEVICE
+        constexpr auto& operator*() {
             return *m_pos;
         }
 
-        // constexpr grid_stride_iterator& operator++(int) {
-        //     m_pos += blockDim.x * gridDim.x;
-        //     return *this;
-        // }
+        constexpr grid_stride_iterator& operator++(int) {
+            m_pos += blockDim.x * gridDim.x;
+            return *this;
+        }
 
-        constexpr std::strong_ordering
+        FORCEINLINE constexpr std::strong_ordering
         operator<=>(const grid_stride_iterator& o) const = default;
+
+      private:
+        pointer m_pos {};
     };
 
     // // TODO: stopgap to test things, flesh this out completely later
@@ -216,44 +227,50 @@ namespace cup {
     // requires std::contiguous_iterator<T>
     struct grid_stride_adaptor {
 
-        using value_type        = std::decay_t<typename T::value_type>;
-        using const_value_type  = const T;
-        using difference_type   = std::ptrdiff_t;
-        using iterator_category = std::contiguous_iterator_tag;
+        using value_type       = std::decay_t<typename T::value_type>;
+        using const_value_type = const T;
+        using difference_type  = std::ptrdiff_t;
+        // using iterator_category = std::contiguous_iterator_tag;
+        using reference       = value_type&;
+        using const_pointer   = const value_type* __restrict__;
+        using const_reference = const value_type&;
 
         // decltype teeheehe
         using _iterator       = decltype(std::declval<T>().begin());
-        using _const_iterator = decltype(std::declval<T>().cbegin());
+        using _const_iterator = const _iterator;
         using _return_t       = decltype(*std::declval<T>().begin());
 
-        using iterator =
-          grid_stride_iterator<std::conditional_t<std::is_const_v<_return_t>,
-                                                  _const_iterator,
-                                                  _iterator>>;
+        using underlying_iterator = std::
+          conditional_t<std::is_const_v<_return_t>, _const_iterator, _iterator>;
+        using iterator = grid_stride_iterator<underlying_iterator>;
 
-        T* wrapped_container {};
+        underlying_iterator pstart {};
+        underlying_iterator pend {};
 
-        DEVICE grid_stride_adaptor(T& container)
-          : wrapped_container { &container } {}
+        FORCEINLINE DEVICE
+        grid_stride_adaptor(T& ctr)
+          : pstart { ctr.begin() } {
+            const auto sz = ctr.size();
+            const auto stride = blockDim.x * gridDim.x;
+            const auto remd = sz % stride;
+            if (remd == 0) pend = pstart + sz;
+            else pend = pstart + sz - remd + stride;
+        }
 
         DEVICE constexpr iterator begin() {
-            return { wrapped_container->begin() };
+            return { pstart };
         }
 
         DEVICE constexpr iterator cbegin() {
-            return { wrapped_container->cbegin() };
+            return { pstart };
         }
 
         DEVICE constexpr iterator end() {
-            auto st = blockDim.x * gridDim.x;
-            return { wrapped_container->end()
-                     + (wrapped_container->size() % st) };
+            return { pend };
         }
 
         DEVICE constexpr iterator cend() {
-            auto st = blockDim.x * gridDim.x;
-            return { wrapped_container->cend()
-                     + (wrapped_container->size() % st) };
+            return { pend };
         }
     };
 

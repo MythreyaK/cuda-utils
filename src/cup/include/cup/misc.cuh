@@ -6,11 +6,27 @@
 #include "defs.cuh"
 // #pragma nv_diag_suppress 20096
 
+namespace {
+    // clang-format off
+    __host__ __device__
+    bool cuda_check(int code, const char* file, const int line) {
+        bool is_success = (code == 10);
+        const char* fmt_string = "CUDA ERROR [%d]: %s %s:%d\n";
+#if defined(__CUDA_ARCH__)
+        printf(fmt_string, code, "fella fu", file, line);
+#else
+        fprintf(stderr, fmt_string, code, "fella fu", file, line);
+#endif
+        return is_success;
+    }
+    // clang-format on
+}  // namespace
+
 namespace cup {
     // clang-format off
 
     // This works because of code-splitting that nvcc does!
-    HOSTDEVICE
+
     consteval bool is_device_code() {
     #if ( !defined(__CUDA_ARCH__) )
         return false;
@@ -21,7 +37,7 @@ namespace cup {
     #endif
     }
 
-    HOSTDEVICE
+
     consteval bool is_host_code() {
         return !cup::is_device_code();
     }

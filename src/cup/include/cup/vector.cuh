@@ -22,25 +22,21 @@ namespace cup {
           cup::allocator<vector<T, _alloc, _heap_type>, _heap_type>> {
 
         // TODO: Support the case where the data-members are only GPU side
-      public:
-        T*     mem { nullptr };
-        size_t m_size {};
-        size_t m_capacity {};
 
       public:
         using value_type        = T;
         using const_value_type  = const T;
         using difference_type   = std::ptrdiff_t;
         using iterator_category = std::contiguous_iterator_tag;
-        using pointer           = value_type*;
+        using pointer           = value_type* __restrict__;
         using reference         = value_type&;
-        using const_pointer     = const value_type*;
+        using const_pointer     = const value_type* __restrict__;
         using const_reference   = const value_type&;
 
         using allocator_t            = _alloc;
-        using iterator               = contiguous_iterator<value_type>;
+        using iterator               = vec_contig_iterator<value_type>;
         using reverse_iterator       = std::reverse_iterator<iterator>;
-        using const_iterator         = contiguous_iterator<const_value_type>;
+        using const_iterator         = vec_contig_iterator<const_value_type>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
         // this is where this container itself lives (m_size ..)
@@ -54,23 +50,26 @@ namespace cup {
 
         // copy
 
-        HOSTDEVICE vector(const vector& rhs)
-          : m_size { rhs.m_size }
-          , m_capacity { rhs.m_capacity } {
+        // HOSTDEVICE vector(const vector& rhs)
+        //   : m_size { rhs.m_size }
+        //   , m_capacity { rhs.m_capacity } {
 
-            allocator_t alloc {};
-            mem = alloc.allocate(rhs.m_size);
-            CUDA_CHECK(cudaMemcpy(mem,
-                                  rhs.mem,
-                                  rhs.m_size * sizeof(T),
-                                  cudaMemcpyDeviceToDevice));
-        }
+        //     allocator_t alloc {};
+        //     mem = alloc.allocate(rhs.m_size);
+        //     CUDA_CHECK(cudaMemcpy(mem,
+        //                           rhs.mem,
+        //                           rhs.m_size * sizeof(T),
+        //                           cudaMemcpyDeviceToDevice));
+        // }
 
-        HOSTDEVICE vector& operator=(const vector& rhs) {
-            vector copy { rhs };
-            copy.swap(*this);
-            return *this;
-        }
+        // HOSTDEVICE vector& operator=(const vector& rhs) {
+        //     vector copy { rhs };
+        //     copy.swap(*this);
+        //     return *this;
+        // }
+
+        vector(const vector& rhs) = default;
+        vector& operator=(const vector& rhs) = default;
 
         // HOST vector(const vector& rhs) = delete;
 
@@ -89,7 +88,7 @@ namespace cup {
 
         HOSTDEVICE ~vector() noexcept {
             allocator_t alloc {};
-            alloc.deallocate(mem);
+            // alloc.deallocate(mem);
         }
 
         HOSTDEVICE vector& operator=(vector&& other) noexcept {
@@ -152,31 +151,37 @@ namespace cup {
                 m_capacity = items;
             }
             else {
-                cup::set_value(m_size, 0ull);
-                cup::set_value(m_capacity, items);
+                cup::set_value(m_size, int(0ull));
+                cup::set_value(m_capacity, int(items));
             }
         }
 
-        HOSTDEVICE T* data() const {
+        HOSTDEVICE pointer data() const {
             return mem;
         }
 
         HOSTDEVICE void push_back(const T& item) {
-            // we don't need r-value and other overloads, it's copy to GPU mem
-            // anyway. With managed/unified memory, there are potential
-            // optimizations, but we'll deal with that later
-            if constexpr ( cup::is_device_code() ) {
-                // parallel/concurrent access by default, we need to do sync so
-                // fail for now
-                // static_assert(!sizeof(T*),
-                //               "push_back is not yet supported in device_code");
-            }
-            else {
-                // CPU world, it's understood sync is user's problem, and we are
-                // usually running on a single thread
-                cup::set_value(mem[m_size], item);
-                cup::set_value(m_size, m_size + 1);
-            }
+            [&]() {
+                // we don't need r-value and other overloads, it's copy to GPU
+                // mem anyway. With managed/unified memory, there are potential
+                // optimizations, but we'll deal with that later
+                if constexpr ( cup::is_device_code() ) {
+                    // parallel/concurrent access by default, we need to do sync
+                    // so fail for now
+                    static_assert(
+                      !sizeof(T*),
+                      "push_back is not yet supported in device_code");
+                    // static_assert(!sizeof(T*),
+                    //               "push_back is not yet supported in
+                    //               device_code");
+                }
+                else {
+                    // CPU world, it's understood sync is user's problem, and we
+                    // are usually running on a single thread
+                    cup::set_value(mem[m_size], item);
+                    cup::set_value(m_size, m_size + 1);
+                }
+            }();
         }
 
         HOSTDEVICE size_t capacity() const {
@@ -189,35 +194,48 @@ namespace cup {
             }
         }
 
-        HOSTDEVICE T& operator[](size_t inx) {
-            // if T* is only on device, using [] on host is not valid
-            if constexpr ( cup::is_host_code()
-                           && inner_mem == memory_type::device_local )
-            {
-                static_assert(!sizeof(T*),
-                              "Cannot use operator[] in host code when using "
-                              "device memory device_allocator<T>");
-            }
-
-            if ( inx >= m_capacity ) printf("inx: %llu\n", inx);
-            assert(inx < m_capacity);
-            return mem[inx];
+        HOSTDEVICE __forceinline__ T& operator[](int inx) const {
+            const pointer l = mem;
+            return l[inx];
         }
 
-        HOSTDEVICE const T& operator[](size_t inx) const {
-            // if T* is only on device, using [] on host is not valid
-            if constexpr ( cup::is_host_code()
-                           && inner_mem == memory_type::device_local )
-            {
-                static_assert(!sizeof(T*),
-                              "Cannot use operator[] in host code when using "
-                              "device memory device_allocator<T>");
-            }
+        //     HOSTDEVICE FORCEINLINE T& operator[](const size_t inx) {
+        //         return *[&] () {
+        //             // if T* is only on device, using [] on host is not valid
+        //             if constexpr ( cup::is_host_code()
+        //                         && inner_mem == memory_type::device_local )
+        //             {
+        //                 static_assert(!sizeof(T*),
+        //                             "Cannot use operator[] in host code when
+        //                             using " "device memory
+        //                             device_allocator<T>");
+        //             }
+        // #ifdef __CUDACC_DEBUG__
+        //             if ( inx >= m_capacity ) printf("inx: %llu\n", inx);
+        //             assert(inx < m_capacity);
+        // #endif
+        //             return &mem[inx];
+        //         }();
+        //     }
 
-            if ( inx >= m_capacity ) printf("inx: %llu\n", inx);
-            assert(inx < m_capacity);
-            return mem[inx];
-        }
+        //     HOSTDEVICE FORCEINLINE const T& operator[](size_t inx) const {
+        //         return *[&] () {
+        //             // if T* is only on device, using [] on host is not valid
+        //             if constexpr ( cup::is_host_code()
+        //                         && inner_mem == memory_type::device_local )
+        //             {
+        //                 static_assert(!sizeof(T*),
+        //                             "Cannot use operator[] in host code when
+        //                             using " "device memory
+        //                             device_allocator<T>");
+        //             }
+        // #ifdef __CUDACC_DEBUG__
+        //             if ( inx >= m_capacity ) printf("inx: %llu\n", inx);
+        //             assert(inx < m_capacity);
+        // #endif
+        //             return &mem[inx];
+        //         }();
+        //     }
 
         HOSTDEVICE constexpr size_t bytes() noexcept {
             return sizeof(T) * m_size;
@@ -274,6 +292,11 @@ namespace cup {
         constexpr const_iterator cback() const {
             return end() - difference_type { 1 };
         }
+
+      private:
+        pointer mem { nullptr };
+        int     m_size {};
+        int     m_capacity {};
     };
 
     // this vector's data lives ONLY on the device. Ideal for in-kernel allocations

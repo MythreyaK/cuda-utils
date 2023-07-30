@@ -37,16 +37,16 @@ namespace cup {
         cudaEvent_t start, stop;
         float       time_taken {};
 
-        cudaEventCreate(&start);
-        cudaEventCreate(&stop);
+        CUDA_CHECK(cudaEventCreate(&start));
+        CUDA_CHECK(cudaEventCreate(&stop));
 
-        cudaEventRecord(start);
+        CUDA_CHECK(cudaEventRecord(start));
 
         callback();
 
-        cudaEventRecord(stop);
-        cudaEventSynchronize(stop);
-        cudaEventElapsedTime(&time_taken, start, stop);
+        CUDA_CHECK(cudaEventRecord(stop));
+        CUDA_CHECK(cudaEventSynchronize(stop));
+        CUDA_CHECK(cudaEventElapsedTime(&time_taken, start, stop));
         return std::chrono::duration<float, std::milli> { time_taken };
     };
 }  // namespace cup
