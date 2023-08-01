@@ -27,8 +27,8 @@ namespace cup {
 
         constexpr allocator() = default;
 
-        template<class TX, memory_type MT>
-        constexpr allocator(const allocator<TX, MT>&) noexcept {}
+        template<class TX, memory_type MTX>
+        constexpr allocator(const allocator<TX, MTX>&) noexcept {}
 
         [[nodiscard]] HOSTDEVICE T* allocate(size_t byte_count) {
             T* ret = nullptr;
