@@ -29,4 +29,8 @@ namespace cup {
     };
 
     // clang-format on
+
+    // check if T has const iterator
+    template<typename T>
+    concept has_const_iterator = requires { typename T::const_iterator; };
 }  // namespace cup

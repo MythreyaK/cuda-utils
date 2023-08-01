@@ -1,11 +1,26 @@
 #pragma once
 
+#include "concepts.cuh"
+
 #include <concepts>
 #include <iterator>
 #include <type_traits>
 
 #include "defs.cuh"
 // #pragma nv_diag_suppress 2361
+
+namespace {
+    template<typename T>
+    struct const_or_iterator {
+        using value = T::iterator;
+    };
+
+    template<typename T>
+    requires cup::has_const_iterator<T>
+    struct const_or_iterator<T> {
+        using value = typename T::const_iterator;
+    };
+}  // namespace
 
 namespace cup {
 
@@ -130,8 +145,7 @@ namespace cup {
     template<typename T>
     struct grid_stride_iterator {
 
-        using value_type        = std::decay_t<T>;
-        // using value_type        = std::decay_t<typename T::value_type>;
+        using value_type        = std::decay_t<typename T::value_type>;
         using const_value_type  = const T;
         using difference_type   = std::ptrdiff_t;
         using iterator_category = std::contiguous_iterator_tag;
@@ -151,8 +165,7 @@ namespace cup {
         grid_stride_iterator() = default;
 
         DEVICE grid_stride_iterator(T pos)
-        //   : m_pos { std::to_address(pos) + threadIdx.x + (blockIdx.x * blockDim.x) } {
-          : m_pos { std::to_address(pos) + threadIdx.x + (blockIdx.x * blockDim.x) } {
+          : m_pos { &*pos + threadIdx.x + (blockIdx.x * blockDim.x) } {
             // printf("Iterator constructed in thread: %2d\n",
             //        threadIdx.x + blockIdx.x * gridDim.x);
         }
@@ -191,19 +204,16 @@ namespace cup {
         //     return *this;
         // }
 
-        FORCEINLINE DEVICE
-        constexpr grid_stride_iterator& operator++() {
+        FORCEINLINE DEVICE constexpr grid_stride_iterator& operator++() {
             m_pos += blockDim.x * gridDim.x;
             return *this;
         }
 
-        FORCEINLINE DEVICE
-        constexpr auto operator&() {
+        FORCEINLINE DEVICE constexpr auto operator&() {
             return m_pos;
         }
 
-        FORCEINLINE DEVICE
-        constexpr auto& operator*() {
+        FORCEINLINE DEVICE constexpr auto& operator*() {
             return *m_pos;
         }
 
@@ -219,12 +229,11 @@ namespace cup {
         pointer m_pos {};
     };
 
-    // // TODO: stopgap to test things, flesh this out completely later
-    // // currently supports only 1D mapping
-    // // Also, ranges librrary support?
+    // TODO: might need more things, currently supports only 1D mapping
+    // Also, ranges librrary support?
 
     template<typename T>
-    // requires std::contiguous_iterator<T>
+    requires std::contiguous_iterator<typename T::iterator>
     struct grid_stride_adaptor {
 
         using value_type       = std::decay_t<typename T::value_type>;
@@ -236,32 +245,34 @@ namespace cup {
         using const_reference = const value_type&;
 
         // decltype teeheehe
-        using _iterator       = decltype(std::declval<T>().begin());
-        using _const_iterator = const _iterator;
+        // decltype(std::declval<T>().begin());
+        using _iterator       = typename T::iterator;
+        using _const_iterator = const_or_iterator<T>;
         using _return_t       = decltype(*std::declval<T>().begin());
 
         using underlying_iterator = std::
           conditional_t<std::is_const_v<_return_t>, _const_iterator, _iterator>;
+
         using iterator = grid_stride_iterator<underlying_iterator>;
 
-        underlying_iterator pstart {};
-        underlying_iterator pend {};
-
-        FORCEINLINE DEVICE
-        grid_stride_adaptor(T& ctr)
+        FORCEINLINE DEVICE grid_stride_adaptor(T& ctr)
           : pstart { ctr.begin() } {
-            const auto sz = ctr.size();
+            const auto sz     = ctr.size();
             const auto stride = blockDim.x * gridDim.x;
-            const auto remd = sz % stride;
-            if (remd == 0) pend = pstart + sz;
-            else pend = pstart + sz - remd + stride;
+            const auto remd   = sz % stride;
+            if ( remd == 0 )
+                pend = pstart + sz;
+            else
+                pend = pstart + sz - remd + stride;
         }
 
         DEVICE constexpr iterator begin() {
             return { pstart };
         }
 
-        DEVICE constexpr iterator cbegin() {
+        DEVICE constexpr iterator cbegin()
+        requires has_const_iterator<T>
+        {
             return { pstart };
         }
 
@@ -269,9 +280,15 @@ namespace cup {
             return { pend };
         }
 
-        DEVICE constexpr iterator cend() {
+        DEVICE constexpr iterator cend()
+        requires has_const_iterator<T>
+        {
             return { pend };
         }
+
+      private:
+        underlying_iterator pstart {};
+        underlying_iterator pend {};
     };
 
 }  // namespace cup

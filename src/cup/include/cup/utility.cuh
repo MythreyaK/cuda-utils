@@ -87,12 +87,12 @@ namespace cup {
         }
     };
 
-    HOSTDEVICE void swap(swappable auto& o1, swappable auto& o2) noexcept {
-        // static_assert();
-        auto tmp { std::move(o1) };
-        o1 = std::move(o2);
-        o2 = std::move(tmp);
-    }
+    // HOSTDEVICE void swap(swappable auto& o1, swappable auto& o2) noexcept {
+    //     // static_assert();
+    //     auto tmp { std::move(o1) };
+    //     o1 = std::move(o2);
+    //     o2 = std::move(tmp);
+    // }
 
     template<typename T>
     cudaPointerAttributes get_attributes(const T& item) {

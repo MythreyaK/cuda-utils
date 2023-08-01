@@ -27,7 +27,6 @@ namespace cup {
         using value_type        = T;
         using const_value_type  = const T;
         using difference_type   = std::ptrdiff_t;
-        using iterator_category = std::contiguous_iterator_tag;
         using pointer           = value_type* __restrict__;
         using reference         = value_type&;
         using const_pointer     = const value_type* __restrict__;
@@ -48,7 +47,7 @@ namespace cup {
         // ctors
         vector() = default;
 
-        // copy
+        // TODO: fix copy
 
         // HOSTDEVICE vector(const vector& rhs)
         //   : m_size { rhs.m_size }
@@ -68,12 +67,8 @@ namespace cup {
         //     return *this;
         // }
 
-        vector(const vector& rhs) = default;
-        vector& operator=(const vector& rhs) = default;
-
-        // HOST vector(const vector& rhs) = delete;
-
-        // HOST vector& operator=(const vector& rhs) = delete;
+        HOST vector(const vector& rhs) = delete;
+        HOST vector& operator=(const vector& rhs) = delete;
 
         // move
 
@@ -246,7 +241,6 @@ namespace cup {
         }
 
         HOSTDEVICE vector& swap(vector& rhs) {
-            using cup::swap;
             swap(mem, rhs.mem);
             swap(m_size, rhs.m_size);
             swap(m_capacity, rhs.m_capacity);
