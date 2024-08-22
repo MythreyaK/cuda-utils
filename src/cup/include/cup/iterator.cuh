@@ -3,6 +3,7 @@
 #include "concepts.cuh"
 
 #include <concepts>
+#include <cstddef>
 #include <iterator>
 #include <type_traits>
 
@@ -257,13 +258,14 @@ namespace cup {
 
         FORCEINLINE DEVICE grid_stride_adaptor(T& ctr)
           : pstart { ctr.begin() } {
-            const auto sz     = ctr.size();
-            const auto stride = blockDim.x * gridDim.x;
-            const auto remd   = sz % stride;
-            if ( remd == 0 )
-                pend = pstart + sz;
-            else
-                pend = pstart + sz - remd + stride;
+            const size_t sz     = ctr.size();
+            const size_t stride = blockDim.x * gridDim.x;
+            const size_t remd   = sz % stride;
+            const size_t tid = threadIdx.x + (blockIdx.x * blockDim.x);
+
+            pend = pstart + sz - remd;
+            if (remd != 0 && tid < remd)
+                pend += stride;
         }
 
         DEVICE constexpr iterator begin() {
